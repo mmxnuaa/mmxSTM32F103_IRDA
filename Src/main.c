@@ -52,7 +52,6 @@ TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 DMA_HandleTypeDef hdma_tim3_ch4_up;
-DMA_HandleTypeDef hdma_tim4_up;
 DMA_HandleTypeDef hdma_tim4_ch1;
 
 UART_HandleTypeDef huart1;
@@ -81,47 +80,47 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 /* USER CODE BEGIN 0 */
 uint32_t KKK[200];
 
-//uint16_t IROut[200] = {
-//524, 0, 352,
-//45,0, 22,
-//44,0, 22,
-//45,0, 23,
-//45,0, 22,
-//45,0, 22,
-//44,0, 22,
-//45,0, 23,
-//86,0, 22,
-//87,0, 23,
-//86,0, 23,
-//86,0, 22,
-//86,0, 22,
-//86,0, 22,
-//87,0, 23,
-//86,0, 22,
-//44,0, 22,
-//45,0, 23,
-//86,0, 22,
-//45,0, 23,
-//45,0, 22,
-//45,0, 22,
-//44,0, 23,
-//45,0, 23,
-//45,0, 22,
-//86,0, 22,
-//45,0, 22,
-//86,0, 22,
-//86,0, 22,
-//86,0, 22,
-//87,0, 23,
-//86,0, 22,
-//86,0, 22,
-//140,0, 22,
-//436,0, 351,
-//3714,0, 22,
-//436,0, 350,
-//138,0, 23,
-//138, 0, 0
-//};
+uint16_t OOO[] = {
+524, 0, 352,
+45,0, 22,
+44,0, 22,
+45,0, 23,
+45,0, 22,
+45,0, 22,
+44,0, 22,
+45,0, 23,
+86,0, 22,
+87,0, 23,
+86,0, 23,
+86,0, 22,
+86,0, 22,
+86,0, 22,
+87,0, 23,
+86,0, 22,
+44,0, 22,
+45,0, 23,
+86,0, 22,
+45,0, 23,
+45,0, 22,
+45,0, 22,
+44,0, 23,
+45,0, 23,
+45,0, 22,
+86,0, 22,
+45,0, 22,
+86,0, 22,
+86,0, 22,
+86,0, 22,
+87,0, 23,
+86,0, 22,
+86,0, 22,
+140,0, 22,
+436,0, 351,
+3714,0, 22,
+436,0, 350,
+138,0, 23,
+138, 0, 0
+};
 //uint16_t OOO[]={
 //    3,  3, 1, 1,
 //    4, 4, 2, 2,
@@ -129,13 +128,13 @@ uint32_t KKK[200];
 //    2, 12, 1, 4,
 //    10, 3, 0, 5
 //};
-uint16_t OOO[]={
-        3,  0, 1,
-        4, 0, 2,
-        5, 0, 3,
-        2, 0, 1,
-        10, 0, 0
-};
+//uint16_t OOO[]={
+//        3,  0, 1,
+//        4, 0, 2,
+//        5, 0, 3,
+//        2, 0, 1,
+//        10, 0, 0
+//};
 //uint16_t OOO[]={
 //  1,2,3,4,5,6,7,8,9,10,11,12
 //};
@@ -412,9 +411,9 @@ static void MX_TIM2_Init(void)
   TIM_OC_InitTypeDef sConfigOC;
 
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 48000;
+  htim2.Init.Prescaler = 157;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 1000;
+  htim2.Init.Period = 7;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -433,7 +432,7 @@ static void MX_TIM2_Init(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_OC2REF;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_OC1;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_ENABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
   {
@@ -441,7 +440,7 @@ static void MX_TIM2_Init(void)
   }
 
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 500;
+  sConfigOC.Pulse = 2;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
@@ -594,9 +593,6 @@ static void MX_DMA_Init(void)
   /* DMA1_Channel3_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
-  /* DMA1_Channel7_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel7_IRQn);
 
 }
 
