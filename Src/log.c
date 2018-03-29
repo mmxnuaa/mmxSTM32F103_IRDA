@@ -8,9 +8,10 @@
 #include <stm32f1xx_hal_uart.h>
 extern UART_HandleTypeDef huart1;
 
-#define LOG_TMP_BUF_SIZE (256)
-static char logBuf[ LOG_TMP_BUF_SIZE + 5 ] ="abcd";
+#define LOG_TMP_BUF_SIZE (128)
+//static char logBuf[ LOG_TMP_BUF_SIZE + 5 ] ="abcd";
 void mmxLog(char type, const char *format, ...){
+    char logBuf[ LOG_TMP_BUF_SIZE + 5 ] ="abcd";
     va_list list;
     va_start(list, format);
     int len = vsnprintf(logBuf + 5, LOG_TMP_BUF_SIZE, format, list);
@@ -30,6 +31,7 @@ void mmxLog(char type, const char *format, ...){
 }
 
 void LogHex(const char *head, uint8_t *pData, uint16_t len, const char *tail){
+    char logBuf[ LOG_TMP_BUF_SIZE + 5 ] ="abcd";
     int lh = strlen(head);
     int lt = strlen(tail);
     if (len + lh + lt > LOG_TMP_BUF_SIZE) {

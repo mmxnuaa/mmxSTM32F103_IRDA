@@ -54,6 +54,7 @@
 //#include <stm32f103xb.h>
 #include <stm32f1xx_ll_tim.h>
 #include <stm32f1xx_hal_tim.h>
+#include <usbd_cdc_if.h>
 #include "string.h"
 #include "log.h"
 /* USER CODE END Includes */
@@ -290,39 +291,56 @@ int main(void)
   HAL_TIM_DMABurst_ReadStop(&htim3, TIM_DMA_CC4);
 //    HAL_TIM_IC_Start_DMA(&htim2, TIM_CHANNEL_3, KKK, 200);
 //  sendIRdma();
-  SendIRData(OOO, sizeof(OOO)/ sizeof(uint16_t));
   while (1)
   {
-//    LogI("adfasdfsadf");
-  /* USER CODE END WHILE */
+////    LogI("adfasdfsadf");
+//  /* USER CODE END WHILE */
+//
+//  /* USER CODE BEGIN 3 */
+//    memset(KKK, 0, sizeof(KKK));
+////    HAL_TIM_IC_Start_DMA(&htim2, TIM_CHANNEL_3, KKK, 200);
+//    startdma();
+//    if (!LL_TIM_IsEnabledCounter(htim4.Instance)){
+//      HAL_Delay(1000);
+//      for (int i = 0; i <10 ; ++i) {
+//        HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
+//        HAL_Delay(100);
+//        HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_SET);
+//        HAL_Delay(100);
+//      }
+//      SendIRData(OOO, sizeof(OOO)/ sizeof(uint16_t));
+//    }
+//    HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
+//    HAL_Delay(1000);
+////    sendIRdma();
+//    HAL_Delay(5000);
+////			if (HAL_GetTick() - tToggle > 1000){
+////    HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
+//    HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_SET);
+////    HAL_TIM_IC_Stop_DMA(&htim2, TIM_CHANNEL_3);
+//    HAL_TIM_DMABurst_ReadStop(&htim3, TIM_DMA_CC4);
+////    HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_1);
+////    HAL_TIM_DMABurst_WriteStop(&htim4, TIM_DMA_UPDATE);
+//    logRecord();
+//    HAL_Delay(1000);
 
-  /* USER CODE BEGIN 3 */
-    memset(KKK, 0, sizeof(KKK));
-//    HAL_TIM_IC_Start_DMA(&htim2, TIM_CHANNEL_3, KKK, 200);
-    startdma();
-    if (!LL_TIM_IsEnabledCounter(htim4.Instance)){
-      HAL_Delay(1000);
-      for (int i = 0; i <10 ; ++i) {
-        HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
-        HAL_Delay(100);
-        HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_SET);
-        HAL_Delay(100);
+    static uint32_t cnt = 0;
+    if (!UsbRxPending && UsbRxValidCnt > 0){
+      uint8_t tmp[70];
+      CDC_Send(GetUsbRxBuff(), (uint16_t) UsbRxValidCnt);
+      cnt += UsbRxValidCnt;
+      LogI("USB got %d, total=%d", UsbRxValidCnt, cnt);
+      int num = UsbRxValidCnt;
+      if (num >= 65){
+        num = 65;
       }
-      SendIRData(OOO, sizeof(OOO)/ sizeof(uint16_t));
+      memcpy(tmp, GetUsbRxBuff(), num);
+      tmp[num] = 0;
+      LogI("USB data : %s", tmp);
     }
-    HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
-    HAL_Delay(1000);
-//    sendIRdma();
-    HAL_Delay(5000);
-//			if (HAL_GetTick() - tToggle > 1000){
-//    HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
-    HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_SET);
-//    HAL_TIM_IC_Stop_DMA(&htim2, TIM_CHANNEL_3);
-    HAL_TIM_DMABurst_ReadStop(&htim3, TIM_DMA_CC4);
-//    HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_1);
-//    HAL_TIM_DMABurst_WriteStop(&htim4, TIM_DMA_UPDATE);
-    logRecord();
-    HAL_Delay(1000);
+    UsbReceiveNewBlock();
+    CDC_CheckSend();
+    __WFI();
   }
   /* USER CODE END 3 */
 
