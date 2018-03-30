@@ -86,6 +86,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
+void DriveUSB_DP_low(void);
 
 /* USER CODE END PFP */
 
@@ -168,51 +169,6 @@ void startdma(){
 
 }
 
-//void sendIRdma(){
-//  HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_1);
-//
-//  HAL_DMA_Abort_IT(&hdma_tim4_ch1);
-////  HAL_DMA_Abort_IT(&hdma_tim4_up);
-//
-//  TIM_HandleTypeDef *htim = &htim4;
-//  /* Enable the TIM Capture/Compare 1 DMA request */
-//  __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC1);
-//
-//  /* Enable the TIM DMA Request */
-//  __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_UPDATE);
-//
-//  /* configure the DMA Burst Mode */
-//  htim->Instance->DCR = TIM_DMABASE_ARR | TIM_DMABURSTLENGTH_4TRANSFERS;
-////  htim->Instance->DCR = TIM_DMABASE_CCR2 | TIM_DMABURSTLENGTH_2TRANSFERS;
-//  __HAL_TIM_SET_AUTORELOAD(htim, 10);
-//  __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_1, 3);
-//  HAL_TIM_GenerateEvent(htim, TIM_EVENTSOURCE_UPDATE);
-////  HAL_TIM_GenerateEvent(htim, TIM_EVENTSOURCE_CC1);
-//
-////  hdma_tim4_up.XferCpltCallback = TIM_DMASendIRDMACplt;
-//  hdma_tim4_ch1.XferCpltCallback = TIM_DMASendIRDMACplt;
-//
-////  HAL_DMA_Start_IT(&hdma_tim4_up, (uint32_t)IROut, (uint32_t)&htim->Instance->DMAR, sizeof(IROut)/ sizeof(uint16_t));
-//  int cnt =   sizeof(OOO)/ sizeof(uint16_t);
-////  HAL_DMA_Start_IT(&hdma_tim4_up, (uint32_t)OOO, (uint32_t)&htim->Instance->DMAR, cnt);
-//  HAL_DMA_Start_IT(&hdma_tim4_ch1, (uint32_t)OOO, (uint32_t)&htim->Instance->DMAR, cnt);
-//
-//  htim->State = HAL_TIM_STATE_READY;
-//
-//
-////  cnt =   sizeof(PPP)/ sizeof(uint16_t);
-////  HAL_DMA_Start_IT(&hdma_tim4_ch1, (uint32_t)PPP, (uint32_t)&htim->Instance->CCR4, cnt);
-//    /* Enable the TIM Capture/Compare 1 DMA request */
-//    __HAL_TIM_ENABLE_DMA(htim, TIM_DMA_CC1);
-//
-//  /* Enable the TIM DMA Request */
-////  __HAL_TIM_ENABLE_DMA(htim, TIM_DMA_UPDATE);
-//
-////  HAL_TIM_GenerateEvent(htim, TIM_EVENTSOURCE_UPDATE);
-////  HAL_TIM_GenerateEvent(htim, TIM_EVENTSOURCE_CC1);
-//  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
-//}
-
 void logRecord(){
   int i = 0;
   for (; i<200; i++){
@@ -264,7 +220,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+  DriveUSB_DP_low();
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -291,41 +247,8 @@ int main(void)
   HAL_TIM_DMABurst_ReadStop(&htim3, TIM_DMA_CC4);
 //    HAL_TIM_IC_Start_DMA(&htim2, TIM_CHANNEL_3, KKK, 200);
 //  sendIRdma();
-  uint32_t tick = HAL_GetTick();
-  bool usbon = true;
   while (1)
   {
-////    LogI("adfasdfsadf");
-//  /* USER CODE END WHILE */
-//
-//  /* USER CODE BEGIN 3 */
-//    memset(KKK, 0, sizeof(KKK));
-////    HAL_TIM_IC_Start_DMA(&htim2, TIM_CHANNEL_3, KKK, 200);
-//    startdma();
-//    if (!LL_TIM_IsEnabledCounter(htim4.Instance)){
-//      HAL_Delay(1000);
-//      for (int i = 0; i <10 ; ++i) {
-//        HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
-//        HAL_Delay(100);
-//        HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_SET);
-//        HAL_Delay(100);
-//      }
-//      SendIRData(OOO, sizeof(OOO)/ sizeof(uint16_t));
-//    }
-//    HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
-//    HAL_Delay(1000);
-////    sendIRdma();
-//    HAL_Delay(5000);
-////			if (HAL_GetTick() - tToggle > 1000){
-////    HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
-//    HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_SET);
-////    HAL_TIM_IC_Stop_DMA(&htim2, TIM_CHANNEL_3);
-//    HAL_TIM_DMABurst_ReadStop(&htim3, TIM_DMA_CC4);
-////    HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_1);
-////    HAL_TIM_DMABurst_WriteStop(&htim4, TIM_DMA_UPDATE);
-//    logRecord();
-//    HAL_Delay(1000);
-
     static uint32_t cnt = 0;
     if (!UsbRxPending && UsbRxValidCnt > 0){
       uint8_t tmp[70];
@@ -343,16 +266,6 @@ int main(void)
     UsbReceiveNewBlock();
     CDC_CheckSend();
     __WFI();
-    if (HAL_GetTick() - tick > 1000*10){
-      if (usbon){
-        USBD_Stop(&hUsbDeviceFS);
-      } else{
-//        USBD_Start(&hUsbDeviceFS);
-          MX_USB_DEVICE_Init();
-      }
-      usbon = !usbon;
-      tick = HAL_GetTick();
-    }
   }
   /* USER CODE END 3 */
 
@@ -635,18 +548,24 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED0_GPIO_Port, &GPIO_InitStruct);
 
-    /*Configure GPIO pin Output Level */
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
-
-    /*Configure GPIO pin : LED0_Pin */
-    GPIO_InitStruct.Pin = GPIO_PIN_12;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 }
 
 /* USER CODE BEGIN 4 */
+static void DriveUSB_DP_low(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct;
 
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : LED0_Pin */
+  GPIO_InitStruct.Pin = GPIO_PIN_12;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+}
 /* USER CODE END 4 */
 
 /**

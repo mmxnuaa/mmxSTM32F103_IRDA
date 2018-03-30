@@ -224,7 +224,7 @@ static int8_t CDC_Init_FS(void)
   */
 static int8_t CDC_DeInit_FS(void)
 {
-  /* USER CODE BEGIN 4 */
+  /* USER CODE BEGIN 4 */ 
   UsbReady = false;
   UsbRxPending = false;
   return (USBD_OK);
