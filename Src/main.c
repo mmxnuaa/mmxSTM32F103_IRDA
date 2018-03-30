@@ -291,6 +291,8 @@ int main(void)
   HAL_TIM_DMABurst_ReadStop(&htim3, TIM_DMA_CC4);
 //    HAL_TIM_IC_Start_DMA(&htim2, TIM_CHANNEL_3, KKK, 200);
 //  sendIRdma();
+  uint32_t tick = HAL_GetTick();
+  bool usbon = true;
   while (1)
   {
 ////    LogI("adfasdfsadf");
@@ -341,6 +343,16 @@ int main(void)
     UsbReceiveNewBlock();
     CDC_CheckSend();
     __WFI();
+    if (HAL_GetTick() - tick > 1000*10){
+      if (usbon){
+        USBD_Stop(&hUsbDeviceFS);
+      } else{
+//        USBD_Start(&hUsbDeviceFS);
+          MX_USB_DEVICE_Init();
+      }
+      usbon = !usbon;
+      tick = HAL_GetTick();
+    }
   }
   /* USER CODE END 3 */
 
@@ -623,6 +635,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED0_GPIO_Port, &GPIO_InitStruct);
 
+    /*Configure GPIO pin Output Level */
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+
+    /*Configure GPIO pin : LED0_Pin */
+    GPIO_InitStruct.Pin = GPIO_PIN_12;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 }
 
 /* USER CODE BEGIN 4 */
