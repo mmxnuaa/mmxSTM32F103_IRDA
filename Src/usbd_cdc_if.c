@@ -161,7 +161,7 @@ static void doUsbReceive(){
   UsbRxPending = false;
 }
 
-void UsbReceiveNewBlock(){
+static void UsbReceiveNewBlockSafe(){
   UsbRxValidCnt = 0;
   if (!UsbReady){
     if (UsbRxPending){
@@ -174,6 +174,12 @@ void UsbReceiveNewBlock(){
   }
 
   doUsbReceive();
+}
+
+void UsbReceiveNewBlock(){
+  HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn);
+  UsbReceiveNewBlockSafe();
+  HAL_NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
 }
 
 /* USER CODE END PRIVATE_FUNCTIONS_DECLARATION */
@@ -354,7 +360,7 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
 }
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
-void CDC_CheckSend(){
+static void CDC_CheckSendSafe(){
   USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS.pClassData;
   if (hcdc == NULL){
     UsbTxReadIdx += UsbTxSendingCnt;
@@ -387,6 +393,11 @@ void CDC_CheckSend(){
   if (USBD_OK == USBD_CDC_TransmitPacket(&hUsbDeviceFS)){
     UsbTxSendingCnt = cnt;
   }
+}
+void CDC_CheckSend(){
+  HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn);
+  CDC_CheckSendSafe();
+  HAL_NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
 }
 
 uint16_t CDC_Send(uint8_t* Buf, uint16_t Len){
