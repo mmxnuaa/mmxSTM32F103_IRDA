@@ -240,9 +240,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 //  HAL_TIM_Base_Start(&htim2);
 //  HAL_TIM_OC_Start(&htim2, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
-  HAL_TIM_IC_Start(&htim3, TIM_CHANNEL_3);
-  HAL_TIM_IC_Start(&htim3, TIM_CHANNEL_4);
 //  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
   HAL_TIM_DMABurst_ReadStop(&htim3, TIM_DMA_CC4);
 //    HAL_TIM_IC_Start_DMA(&htim2, TIM_CHANNEL_3, KKK, 200);
