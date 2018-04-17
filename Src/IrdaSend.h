@@ -13,6 +13,6 @@ typedef struct IrdaPulseTickDef{
     uint16_t on;
 }IrdaPulseTickDef_t;
 
-bool IrdaSendPulse(IrdaPulseTickDef_t *pulse, uint32_t cnt)
+bool IrdaSendPulse(IrdaPulseTickDef_t *pulse, uint32_t cnt);
 
 #endif //MMXSTM32F103_IRDASEND_H

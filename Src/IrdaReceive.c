@@ -2,33 +2,34 @@
 // Created by mmx on 2018/3/28.
 //
 
+#include "stm32f1xx_hal.h"
 #include <stm32f1xx_hal_tim.h>
 #include "IrdaReceive.h"
 #include "log.h"
+#include "IrdaCarrierMgr.h"
 
 extern TIM_HandleTypeDef htim3;
 extern DMA_HandleTypeDef hdma_tim3_ch4_up;
 #define RECEIVE_TIM htim3
 
+#define MAX_PULS_CNT 100
 static struct _STATE{
     uint32_t msOnStart;
     uint32_t msOn;
-    uint32_t tLastCheck;
-    uint32_t tLastLeft;
+    uint32_t tLastNewData;
     uint32_t iLastRptIdx;
     uint16_t tLastFallingVal;
     bool     bFallingValid;
-}sRevState = {0,0,0,0};
+}sRevState = { 0,0,0,0};
 
-#define MAX_TICK_CNT 100
-static uint16_t sTicks[MAX_TICK_CNT];
+static uint16_t sTicks[MAX_PULS_CNT];
 
 static void startdma(){
     TIM_HandleTypeDef *htim = &RECEIVE_TIM;
     /* configure the DMA Burst Mode */
     htim->Instance->DCR = TIM_DMABASE_CCR3 | TIM_DMABURSTLENGTH_2TRANSFERS;
 
-    HAL_DMA_Start(&hdma_tim3_ch4_up, (uint32_t)&htim->Instance->DMAR, (uint32_t)sTicks, MAX_TICK_CNT);
+    HAL_DMA_Start(&hdma_tim3_ch4_up, (uint32_t)&htim->Instance->DMAR, (uint32_t)sTicks, MAX_PULS_CNT);
 
     htim->State = HAL_TIM_STATE_READY;
 
@@ -36,59 +37,75 @@ static void startdma(){
     __HAL_TIM_ENABLE_DMA(htim, TIM_DMA_CC4);
 }
 
+static void hwTurnOffTimAndDma(){
+    HAL_TIM_IC_Stop(&RECEIVE_TIM, TIM_CHANNEL_3);
+    HAL_TIM_IC_Stop(&RECEIVE_TIM, TIM_CHANNEL_4);
+    __HAL_TIM_CLEAR_FLAG(&RECEIVE_TIM, (TIM_FLAG_CC3|TIM_FLAG_CC4|TIM_FLAG_CC3OF|TIM_FLAG_CC4OF));
+    HAL_DMA_Abort(&hdma_tim3_ch4_up);
+}
+
+static void hwStartTimAndDma(){
+    startdma();
+    HAL_TIM_IC_Start(&RECEIVE_TIM, TIM_CHANNEL_3);
+    HAL_TIM_IC_Start(&RECEIVE_TIM, TIM_CHANNEL_4);
+}
+
+static void hwRestartTimAndDma(){
+    hwTurnOffTimAndDma();
+    hwStartTimAndDma();
+}
+
+static void hwRestartDma(){
+    HAL_DMA_Abort(&hdma_tim3_ch4_up);
+    sRevState.iLastRptIdx = 0;
+    startdma();
+}
+
 void IrdaReceiveTurnOn(uint32_t msOn){
     if (sRevState.msOnStart == 0){
-        HAL_TIM_IC_Stop(&RECEIVE_TIM, TIM_CHANNEL_3);
-        HAL_TIM_IC_Stop(&RECEIVE_TIM, TIM_CHANNEL_4);
-        __HAL_TIM_CLEAR_FLAG(&RECEIVE_TIM, (TIM_FLAG_CC3|TIM_FLAG_CC4|TIM_FLAG_CC3OF|TIM_FLAG_CC4OF));
-        startdma();
-        HAL_TIM_IC_Start(&RECEIVE_TIM, TIM_CHANNEL_3);
-        HAL_TIM_IC_Start(&RECEIVE_TIM, TIM_CHANNEL_4);
-        sRevState.msOnStart = HAL_GetTick();
+        hwRestartTimAndDma();
+        sRevState.msOnStart = NowMs();
         sRevState.msOn = msOn;
+        IrdaCarrierEnable(CP_RECEIVE);
         USBRsp("IrdaRecvState: On");
         return;
     }
 
-    uint32_t tpass = HAL_GetTick() - sRevState.msOnStart;
+    uint32_t tpass = NowMs() - sRevState.msOnStart;
     if (tpass > sRevState.msOn){
-        sRevState.msOnStart = HAL_GetTick();
+        sRevState.msOnStart = NowMs();
         sRevState.msOn = msOn;
     } else {
-        sRevState.msOnStart = HAL_GetTick();
+        sRevState.msOnStart = NowMs();
         sRevState.msOn = sRevState.msOn - tpass + msOn;
     }
     USBRsp("IrdaRecvState: On");
 }
 
 static void irdaReportResult(uint32_t dmaLeft) {
-    if (MAX_TICK_CNT <= dmaLeft){
+    if (MAX_PULS_CNT <= dmaLeft){
         return;
     }
-    uint32_t validCnt = MAX_TICK_CNT - dmaLeft;
+    uint32_t validCnt = MAX_PULS_CNT - dmaLeft;
     while (sRevState.iLastRptIdx + 2 <= validCnt){
         uint16_t up = sTicks[sRevState.iLastRptIdx++];
         uint16_t down = sTicks[sRevState.iLastRptIdx++];
         if (sRevState.bFallingValid){
-            USBRsp("IrdaSigLow: %d", up - sRevState.tLastFallingVal);
+            USBRsp("IrdaSigLow: %u", (uint32_t)(up - sRevState.tLastFallingVal));
         }
-        USBRsp("IrdaSigHigh: %d", down - up);
+        USBRsp("IrdaSigHigh: %u", (uint32_t)(down - up));
         sRevState.bFallingValid = true;
         sRevState.tLastFallingVal = down;
+        sRevState.tLastNewData = NowMs();
     }
 }
 
-static void restartDma(){
-
-}
 
 void IrdaReceiveTurnOff(void){
     sRevState.msOnStart = 0;
-    HAL_TIM_IC_Stop(&RECEIVE_TIM, TIM_CHANNEL_3);
-    HAL_TIM_IC_Stop(&RECEIVE_TIM, TIM_CHANNEL_4);
-    __HAL_TIM_CLEAR_FLAG(&RECEIVE_TIM, (TIM_FLAG_CC3|TIM_FLAG_CC4|TIM_FLAG_CC3OF|TIM_FLAG_CC4OF));
-    HAL_DMA_Abort(&hdma_tim3_ch4_up);
-    sRevState.tLastCheck = 0;
+    IrdaCarrierDisable(CP_RECEIVE);
+    hwTurnOffTimAndDma();
+    sRevState.tLastNewData = 0;
     USBRsp("IrdaRecvState: Off");
 }
 
@@ -100,23 +117,24 @@ void IrdaReceiveCheck(void){
     uint32_t dmaLeft = __HAL_DMA_GET_COUNTER(&hdma_tim3_ch4_up);
     irdaReportResult(dmaLeft);
     if (dmaLeft ==0){
-        restartDma();
+        //BUFFER FULL, report end
+        USBRsp("IrdaSigEndSequence:Buff full");
+        sRevState.bFallingValid = false;
+        hwRestartDma();
         return;
     }
 
-    if (HAL_GetTick() - sRevState.msOnStart > sRevState.msOn ){
+    if (NowMs() - sRevState.msOnStart > sRevState.msOn ){
         IrdaReceiveTurnOff();
         return;
     }
-    if (sRevState.bFallingValid && sRevState.tLastCheck != 0 && sRevState.tLastLeft == dmaLeft && HAL_GetTick() - sRevState.tLastCheck > 50 ){
+    if (sRevState.bFallingValid && sRevState.tLastNewData != 0 && NowMs() - sRevState.tLastNewData > 50 ){
         USBRsp("IrdaSigEndSequence");
         sRevState.bFallingValid = false;
     }
 
-    if (dmaLeft < MAX_TICK_CNT/2 && sRevState.tLastCheck != 0 && sRevState.tLastLeft == dmaLeft && HAL_GetTick() - sRevState.tLastCheck > 50 ){
-        restartDma();
+    if (dmaLeft < MAX_PULS_CNT/2 && sRevState.tLastNewData != 0 && NowMs() - sRevState.tLastNewData > 50 ){
+        hwRestartDma();
         return;
     }
-    sRevState.tLastCheck = HAL_GetTick();
-    sRevState.tLastLeft = dmaLeft;
 }

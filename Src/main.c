@@ -57,6 +57,8 @@
 #include <usbd_cdc_if.h>
 #include "string.h"
 #include "log.h"
+#include "IrdaReceive.h"
+#include "CmdEngine.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -91,113 +93,6 @@ void DriveUSB_DP_low(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
-uint32_t KKK[200];
-
-uint16_t OOO[] = {
-524, 0, 352,
-45,0, 22,
-44,0, 22,
-45,0, 23,
-45,0, 22,
-45,0, 22,
-44,0, 22,
-45,0, 23,
-86,0, 22,
-87,0, 23,
-86,0, 23,
-86,0, 22,
-86,0, 22,
-86,0, 22,
-87,0, 23,
-86,0, 22,
-44,0, 22,
-45,0, 23,
-86,0, 22,
-45,0, 23,
-45,0, 22,
-45,0, 22,
-44,0, 23,
-45,0, 23,
-45,0, 22,
-86,0, 22,
-45,0, 22,
-86,0, 22,
-86,0, 22,
-86,0, 22,
-87,0, 23,
-86,0, 22,
-86,0, 22,
-140,0, 22,
-436,0, 351,
-3714,0, 22,
-436,0, 350,
-138,0, 23,
-138, 0, 0
-};
-//uint16_t OOO[]={
-//    3,  3, 1, 1,
-//    4, 4, 2, 2,
-//    5, 6, 3, 3,
-//    2, 12, 1, 4,
-//    10, 3, 0, 5
-//};
-//uint16_t OOO[]={
-//        3,  0, 1,
-//        4, 0, 2,
-//        5, 0, 3,
-//        2, 0, 1,
-//        10, 0, 0
-//};
-//uint16_t OOO[]={
-//  1,2,3,4,5,6,7,8,9,10,11,12
-//};
-uint16_t PPP[]={
-        6,7,8,9
-};
-
-void startdma(){
-  TIM_HandleTypeDef *htim = &htim3;
-  /* configure the DMA Burst Mode */
-  htim->Instance->DCR = TIM_DMABASE_CCR3 | TIM_DMABURSTLENGTH_2TRANSFERS;
-
-  HAL_DMA_Start_IT(&hdma_tim3_ch4_up, (uint32_t)&htim->Instance->DMAR, (uint32_t)KKK, 200);
-
-  htim->State = HAL_TIM_STATE_READY;
-
-  /* Enable the TIM DMA Request */
-  __HAL_TIM_ENABLE_DMA(htim, TIM_DMA_CC4);
-
-}
-
-void logRecord(){
-  int i = 0;
-  for (; i<200; i++){
-    if (KKK[i] == 0){
-      break;
-    }
-  }
-  int cnt = i;
-  LogI("record cnt=%d, DMA left=%d", cnt, __HAL_DMA_GET_COUNTER(&hdma_tim3_ch4_up));
-  uint16_t *p = (uint16_t *) KKK;
-  for (int j = 1; j < cnt*2; ++j) {
-     LogI("%d --[%08x]--%d,  %d,  %d", j, KKK[j/2],  p[j], p[j-1], (int)(13.2*2*(p[j]-p[j-1])));
-  }
-
-//  LogI(" ++++++++ ");
-//    int j = 2;
-//  for (; j < cnt*2; j+=2) {
-//    int hi = p[j-1] - p[j-2];
-//    int low = p[j] - p[j-1];
-//    LogI("%d, %d,", hi+low, hi);
-//  }
-//  if (cnt > 0){
-//    int hi = p[j-1] - p[j-2];
-//    int low = hi*5;
-//    LogI("%d, %d,", hi+low, hi);
-//  }
-
-  LogI(" ========== ");
-}
 /* USER CODE END 0 */
 
 int main(void)
@@ -246,22 +141,9 @@ int main(void)
 //  sendIRdma();
   while (1)
   {
-    static uint32_t cnt = 0;
-    if (!UsbRxPending && UsbRxValidCnt > 0){
-      uint8_t tmp[70];
-      CDC_Send(GetUsbRxBuff(), (uint16_t) UsbRxValidCnt);
-      cnt += UsbRxValidCnt;
-      LogI("USB got %d, total=%d", UsbRxValidCnt, cnt);
-      int num = UsbRxValidCnt;
-      if (num >= 65){
-        num = 65;
-      }
-      memcpy(tmp, GetUsbRxBuff(), num);
-      tmp[num] = 0;
-      LogI("USB data : %s", tmp);
-    }
-    UsbReceiveNewBlock();
+    CmdEngineCheck();
     CDC_CheckSend();
+    IrdaReceiveCheck();
     __WFI();
   }
   /* USER CODE END 3 */

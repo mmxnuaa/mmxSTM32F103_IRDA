@@ -2,7 +2,6 @@
 // Created by mmx on 2018/3/28.
 //
 
-#include "IrdaSend.h"
 
 #include "stm32f1xx_hal.h"
 
@@ -11,6 +10,7 @@
 #include "string.h"
 #include "log.h"
 #include "IrdaCarrierMgr.h"
+#include "IrdaSend.h"
 
 //*********************************************
 // Use TIM4 CH1 and DMA to generate Irda remote signal

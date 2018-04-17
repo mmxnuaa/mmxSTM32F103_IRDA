@@ -2,6 +2,7 @@
 // Created by mmx on 2018/3/28.
 //
 
+#include "stm32f1xx_hal.h"
 #include <stm32f1xx_hal_tim.h>
 #include "IrdaCarrierMgr.h"
 

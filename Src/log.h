@@ -18,7 +18,8 @@ void LogHex(const char *head, uint8_t *pData, uint16_t len, const char *tail);
 #define LogI(...)  mmxLog('I', __VA_ARGS__)
 #define LogE(...)  mmxLog('E', __VA_ARGS__)
 
-#define USBRsp(...)
+void usbCDCRsp(const char *format, ...);
+#define USBRsp(...)   usbCDCRsp(__VA_ARGS__)
 #else
 #define LogI(...)
 #define LogE(...)

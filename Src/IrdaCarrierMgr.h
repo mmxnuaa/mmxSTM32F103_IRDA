@@ -14,4 +14,6 @@ typedef enum {
 void IrdaCarrierEnable(CarrierPurpose target);
 void IrdaCarrierDisable(CarrierPurpose target);
 
+#define NowMs() (HAL_GetTick()|0x1)
+
 #endif //MMXSTM32F103_IRDACARRIERMGR_H

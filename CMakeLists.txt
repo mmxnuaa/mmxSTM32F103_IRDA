@@ -526,4 +526,4 @@ add_executable(mmxSTM32F103
         Src/usb_device.c
         Src/usbd_cdc_if.c
         Src/usbd_conf.c
-        Src/usbd_desc.c Src/IrdaSend.c Src/IrdaSend.h Src/IrdaReceive.c Src/IrdaReceive.h Src/IrdaCarrierMgr.c Src/IrdaCarrierMgr.h)
+        Src/usbd_desc.c Src/IrdaSend.c Src/IrdaSend.h Src/IrdaReceive.c Src/IrdaReceive.h Src/IrdaCarrierMgr.c Src/IrdaCarrierMgr.h Src/CmdEngine.c Src/CmdEngine.h)
