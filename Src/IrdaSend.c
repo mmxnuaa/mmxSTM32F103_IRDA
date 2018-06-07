@@ -18,8 +18,7 @@
 
 extern TIM_HandleTypeDef htim4;
 extern DMA_HandleTypeDef hdma_tim4_ch1;
-
-#define MAX_SEND_PULSE   40
+static volatile bool sbSendBusy = false;
 
 #pragma pack(2)
 typedef struct _RAW_TICK_DMA_PACK_t{
@@ -27,7 +26,7 @@ typedef struct _RAW_TICK_DMA_PACK_t{
     uint16_t dummy; //gap between arr and ccr1, just put dummy value
     uint16_t ccr1;   //arr register value
 }RAW_TICK_DMA_PACK_t;
-static RAW_TICK_DMA_PACK_t sDMAPulseRawData[MAX_SEND_PULSE];
+static RAW_TICK_DMA_PACK_t sDMAPulseRawData[MAX_SEND_PULSE+1]; //ONE extra for DMA end pulse
 #pragma pack()
 
 static void TIM_DMASendIrdaCplt(DMA_HandleTypeDef *hdma)
@@ -36,6 +35,7 @@ static void TIM_DMASendIrdaCplt(DMA_HandleTypeDef *hdma)
   htim->State= HAL_TIM_STATE_READY;
   HAL_TIM_PWM_Stop(htim, TIM_CHANNEL_1);
   IrdaCarrierDisable(CP_SEND);
+  sbSendBusy = false;
 }
 
 static bool irdaSendRawTick(RAW_TICK_DMA_PACK_t *pData, uint32_t cnt){
@@ -43,6 +43,8 @@ static bool irdaSendRawTick(RAW_TICK_DMA_PACK_t *pData, uint32_t cnt){
     LogE("Invalid irda raw tick to send: %d", cnt);
     return false;
   }
+
+  sbSendBusy = true;
 //  LogI("Send irda raw tick: len = %d", cnt);
   TIM_HandleTypeDef *htim = &IRDA_SIGNAL_TIM;
 
@@ -77,8 +79,12 @@ static bool irdaSendRawTick(RAW_TICK_DMA_PACK_t *pData, uint32_t cnt){
 }
 
 bool IrdaSendPulse(IrdaPulseTickDef_t *pulse, uint32_t cnt){
-  if (cnt >= MAX_SEND_PULSE){
+  if (cnt > MAX_SEND_PULSE){
     LogE("No support so many pulse: %d", cnt);
+    return false;
+  }
+  if (IrdaIsSendBusy()){
+    LogE("Send busy");
     return false;
   }
 
@@ -95,9 +101,14 @@ bool IrdaSendPulse(IrdaPulseTickDef_t *pulse, uint32_t cnt){
     }
     pRaw++;
     pulse_cnt++;
+    pulse++;
   }
   pRaw->arr = 10;
   pRaw->ccr1 = 0;
   pulse_cnt++;
   return irdaSendRawTick(sDMAPulseRawData, pulse_cnt);
+}
+
+bool IrdaIsSendBusy() {
+  return sbSendBusy;
 }

@@ -91,9 +91,9 @@ static void irdaReportResult(uint32_t dmaLeft) {
         uint16_t up = sTicks[sRevState.iLastRptIdx++];
         uint16_t down = sTicks[sRevState.iLastRptIdx++];
         if (sRevState.bFallingValid){
-            USBRsp("IrdaSigLow: %u", (uint32_t)(up - sRevState.tLastFallingVal));
+            USBRsp("IrdaSigLow: %u", (uint16_t)(up - sRevState.tLastFallingVal) );
         }
-        USBRsp("IrdaSigHigh: %u", (uint32_t)(down - up));
+        USBRsp("IrdaSigHigh: %u", (uint16_t)(down - up));
         sRevState.bFallingValid = true;
         sRevState.tLastFallingVal = down;
         sRevState.tLastNewData = NowMs();
